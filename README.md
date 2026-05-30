@@ -39,8 +39,6 @@ Open **Settings…** from the menu bar icon (or `⌘,`) to rebind any shortcut. 
 
 Grab the latest `Pane-x.y.z.zip` from the [Releases page](https://github.com/hayatayubi/pane/releases/latest), unzip it, and drag `Pane.app` to `/Applications`.
 
-Pane isn't signed with an Apple Developer ID (that costs $99/yr), so macOS Gatekeeper will refuse to open it on first launch. Two ways to clear that:
-
 **One-liner (recommended):**
 
 ```bash
