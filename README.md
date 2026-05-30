@@ -1,4 +1,3 @@
-
 # Pane
 
 <img src="Resources/icon.png" width="128" align="right" alt="Pane app icon">
@@ -9,105 +8,45 @@ A minimal macOS window-snapping utility. Lives in the menu bar, no Dock icon.
   <video src="https://github.com/user-attachments/assets/6bcb637c-756d-4839-95ab-87b3d9ddfea3" width="720" controls muted></video>
 </p>
 
-## Two ways to snap
+## Install
 
-1. **Drag-to-edge** — grab any window's title bar and drag toward a screen edge or corner. The target zone outlines on-screen; release to snap.
-   - Edge → corresponding half (top = maximize, bottom/left/right = bottom/left/right half)
-   - Corner → that quarter of the screen
-   - Drag in the middle of the screen → no outline, no snap (window moves freely)
-2. **Keyboard shortcuts** — default modifier is `⌃⌥` (Control+Option), customizable in Settings:
+1. Download the latest **[Pane.dmg](https://github.com/hayatayubi/pane/releases/latest)**.
+2. Open the DMG and drag `Pane` into the `Applications` folder.
+3. Double-click `Pane` in Applications. macOS will block it — click **OK**.
+4. Open **System Settings → Privacy & Security**, scroll down, and click **Open Anyway**.
+5. Grant **Accessibility** when macOS prompts.
 
-   | Default | Action       |
-   |---------|--------------|
-   | `⌃⌥←`  | Left half     |
-   | `⌃⌥→`  | Right half    |
-   | `⌃⌥↑`  | Maximize      |
-   | `⌃⌥O`  | Top half      |
-   | `⌃⌥L`  | Bottom half   |
-   | `⌃⌥U`  | Top-left      |
-   | `⌃⌥I`  | Top-right     |
-   | `⌃⌥J`  | Bottom-left   |
-   | `⌃⌥K`  | Bottom-right  |
+Pane now lives in your menu bar.
 
-Open **Settings…** from the menu bar icon (or `⌘,`) to rebind any shortcut. Click a shortcut chip, press your new combo (must include at least one modifier). `Esc` cancels, `⌫` clears.
+## How to use
+
+**Drag any window's title bar toward an edge or corner.** The target zone outlines on screen; release to snap.
+
+**Or use a keyboard shortcut** (customizable in Settings):
+
+| Shortcut | Action       |
+|----------|--------------|
+| `⌃⌥↑`   | Maximize     |
+| `⌃⌥←`   | Left half    |
+| `⌃⌥→`   | Right half   |
+| `⌃⌥O`   | Top half     |
+| `⌃⌥L`   | Bottom half  |
+| `⌃⌥U`   | Top-left     |
+| `⌃⌥I`   | Top-right    |
+| `⌃⌥J`   | Bottom-left  |
+| `⌃⌥K`   | Bottom-right |
+
+Click the menu bar icon → **Settings…** (or press `⌘,`) to rebind shortcuts, change the snap-outline color, or enable start-at-login.
 
 <p align="center">
   <img src="Resources/screenshots/settings.png" width="540" alt="Pane settings window">
 </p>
 
-## Download
-
-1. **Grab the latest `Pane-x.y.z.dmg`** from the [Releases page](https://github.com/hayatayubi/pane/releases/latest).
-2. Double-click the DMG, then drag `Pane.app` into the `Applications` folder.
-3. Open `Applications` in Finder and double-click `Pane`. macOS will say *"Pane cannot be opened because Apple cannot check it for malicious software."* — click **OK**.
-4. Open **System Settings → Privacy & Security**, scroll down to the *"Pane was blocked…"* message, and click **Open Anyway**.
-5. Confirm one more time. Pane launches and adds itself to your menu bar.
-
-Then grant **Accessibility** permission when macOS prompts (System Settings → Privacy & Security → Accessibility). That's the one persistent permission Pane needs to move other apps' windows.
-
-> **Why the warning?** Pane isn't signed with an Apple Developer ID, which costs $99/yr. The bypass above is a one-time thing — after that, double-clicking the app works normally.
-
-<details>
-<summary>Prefer the terminal?</summary>
-
-```bash
-xattr -dr com.apple.quarantine /Applications/Pane.app && open /Applications/Pane.app
-```
-
-That strips the quarantine attribute and skips all the GUI bypass steps.
-
-</details>
-
 ## Build from source
 
-```bash
-./build.sh                              # local dev build (signed with your Apple Dev cert if you have one)
-cp -R .build/release/Pane.app /Applications/    # first-time install
-open /Applications/Pane.app
-```
-
-After the first install, subsequent `./build.sh` runs refresh `/Applications/Pane.app` automatically.
-
-To produce distributable release artifacts (universal arm64+x86_64 binary, ad-hoc signed):
+Requires macOS 14+ and the Xcode command-line tools.
 
 ```bash
-./build.sh --release    # outputs dist/Pane-<version>.dmg and dist/Pane-<version>.zip
-```
-
-## Regenerating the icon
-
-```bash
-./tools/make-icon.sh
-```
-
-Edit [tools/IconGen.swift](tools/IconGen.swift) to change the design. The next `./build.sh` picks up the new `Resources/Pane.icns`.
-
-## Requirements
-
-- macOS 14 (Sonoma) or later
-- Xcode 15+ / Swift 5.9+ toolchain
-
-## Project layout
-
-```
-Sources/Pane/
-  main.swift             – entry point
-  AppDelegate.swift      – status item, permission flow, menu
-  WindowManager.swift    – AX read/write + Electron compatibility
-  ScreenCoords.swift     – AppKit ↔ AX coordinate helpers
-  SnapZone.swift         – 9 snap targets, frame math, edge/corner triggers
-  DragMonitor.swift      – CGEventTap + polling loop for drag detection
-  SnapOverlay.swift      – full-screen zone-outline overlay
-  HotkeyManager.swift    – Carbon RegisterEventHotKey bindings
-  HotkeyBinding.swift    – binding model + UserDefaults store
-  AppearanceStore.swift  – snap-outline color preference
-  LaunchAtLoginStore.swift – SMAppService start-at-login wrapper
-  SettingsWindow.swift   – SwiftUI settings UI + hotkey recorder
-
-Resources/
-  Pane.icns              – app icon (generated by tools/make-icon.sh)
-
-tools/
-  IconGen.swift          – CoreGraphics icon renderer
-  make-icon.sh           – builds Pane.icns from the renderer
+./build.sh              # local build → .build/release/Pane.app
+./build.sh --release    # universal release DMG → dist/Pane-<version>.dmg
 ```

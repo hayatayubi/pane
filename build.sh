@@ -97,23 +97,14 @@ codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_DIR" >/dev/null
 echo "✓ Built $APP_DIR  (signed: $SIGN_IDENTITY)"
 
 if [ "$RELEASE_MODE" = "1" ]; then
-    DIST_DIR="dist"
-    mkdir -p "$DIST_DIR"
-
-    # 1) Distributable zip — what curl-style installers and power users want.
-    # Use `ditto` (not `zip`) so macOS metadata, including the code
-    # signature, survives the round trip.
-    ZIP_PATH="$DIST_DIR/$APP_NAME-$VERSION.zip"
-    rm -f "$ZIP_PATH"
-    ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "$ZIP_PATH"
-    echo "✓ Packaged $ZIP_PATH"
-
-    # 2) Drag-to-Applications DMG — the recommended download for end users.
+    # Drag-to-Applications DMG — the single distributable for end users.
     # Stage a folder containing Pane.app and a symlink to /Applications,
     # then have hdiutil compress it into a read-only UDZO image. When the
     # user mounts the DMG they get the familiar "drag this → that" view.
+    DIST_DIR="dist"
     DMG_PATH="$DIST_DIR/$APP_NAME-$VERSION.dmg"
     STAGE="$DIST_DIR/dmg-staging"
+    mkdir -p "$DIST_DIR"
     rm -rf "$STAGE" "$DMG_PATH"
     mkdir -p "$STAGE"
     cp -R "$APP_DIR" "$STAGE/"
@@ -128,7 +119,7 @@ if [ "$RELEASE_MODE" = "1" ]; then
     echo "✓ Packaged $DMG_PATH"
 
     echo ""
-    echo "Next: gh release create v$VERSION \"$DMG_PATH\" \"$ZIP_PATH\" --title \"Pane v$VERSION\" --notes \"…\""
+    echo "Next: gh release create v$VERSION \"$DMG_PATH\" --title \"Pane v$VERSION\" --notes \"…\""
 else
     # If the user has already installed Pane to /Applications, refresh that
     # copy so they can keep launching from Launchpad / Spotlight with the
