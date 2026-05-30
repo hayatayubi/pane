@@ -37,17 +37,26 @@ Open **Settings…** from the menu bar icon (or `⌘,`) to rebind any shortcut. 
 
 ## Download
 
-Grab the latest `Pane-x.y.z.zip` from the [Releases page](https://github.com/hayatayubi/pane/releases/latest), unzip it, and drag `Pane.app` to `/Applications`.
+1. **Grab the latest `Pane-x.y.z.dmg`** from the [Releases page](https://github.com/hayatayubi/pane/releases/latest).
+2. Double-click the DMG, then drag `Pane.app` into the `Applications` folder.
+3. Open `Applications` in Finder and double-click `Pane`. macOS will say *"Pane cannot be opened because Apple cannot check it for malicious software."* — click **OK**.
+4. Open **System Settings → Privacy & Security**, scroll down to the *"Pane was blocked…"* message, and click **Open Anyway**.
+5. Confirm one more time. Pane launches and adds itself to your menu bar.
 
-**One-liner (recommended):**
+Then grant **Accessibility** permission when macOS prompts (System Settings → Privacy & Security → Accessibility). That's the one persistent permission Pane needs to move other apps' windows.
+
+> **Why the warning?** Pane isn't signed with an Apple Developer ID, which costs $99/yr. The bypass above is a one-time thing — after that, double-clicking the app works normally.
+
+<details>
+<summary>Prefer the terminal?</summary>
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Pane.app && open /Applications/Pane.app
 ```
 
-**Or, no terminal:** right-click `Pane.app` in `/Applications`, choose *Open*, then click *Open* in the warning dialog. After that one bypass, future launches work normally.
+That strips the quarantine attribute and skips all the GUI bypass steps.
 
-On first launch macOS will prompt for **Accessibility** permission. Grant it in *System Settings → Privacy & Security → Accessibility*, then relaunch.
+</details>
 
 ## Build from source
 
@@ -59,10 +68,10 @@ open /Applications/Pane.app
 
 After the first install, subsequent `./build.sh` runs refresh `/Applications/Pane.app` automatically.
 
-To produce a distributable release zip (ad-hoc signed, no Apple Dev cert required):
+To produce distributable release artifacts (universal arm64+x86_64 binary, ad-hoc signed):
 
 ```bash
-./build.sh --release    # outputs dist/Pane-<version>.zip
+./build.sh --release    # outputs dist/Pane-<version>.dmg and dist/Pane-<version>.zip
 ```
 
 ## Regenerating the icon
