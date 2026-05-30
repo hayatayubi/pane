@@ -17,6 +17,7 @@ final class DragMonitor {
 
     private var draggedWindow: AXUIElement?
     private var dragStartAX: CGPoint = .zero
+    private var dragStartFrame: CGRect = .zero
     private var dragging = false
     private var overlayShown = false
     private var overlayScreen: NSScreen?
@@ -85,6 +86,7 @@ final class DragMonitor {
 
         draggedWindow = window
         dragStartAX = point
+        dragStartFrame = frame
         dragging = false
         overlayShown = false
         startPolling()
@@ -115,6 +117,25 @@ final class DragMonitor {
             let dy = point.y - dragStartAX.y
             guard dx*dx + dy*dy >= dragThreshold * dragThreshold else { return }
             dragging = true
+
+            // Snap-undo: if this window was snapped within the last few
+            // seconds, restore its pre-snap size now and position it so the
+            // title bar stays under the cursor — that way the drag continues
+            // smoothly into whatever the user wants to do with the window.
+            if let window = draggedWindow,
+               let restoreFrame = SnapHistory.consumeRestoreFrame(for: window) {
+                let snappedWidth  = max(dragStartFrame.width,  1)
+                let relX = (dragStartAX.x - dragStartFrame.minX) / snappedWidth
+                let newX = point.x - relX * restoreFrame.width
+                // Keep the cursor on the title bar: ~12pt below the top edge.
+                let newY = max(0, point.y - 12)
+                let target = CGRect(
+                    x: newX, y: newY,
+                    width: restoreFrame.width,
+                    height: restoreFrame.height
+                )
+                WindowManager.setFrame(target, for: window)
+            }
         }
 
         updateOverlay(at: point)
@@ -149,6 +170,7 @@ final class DragMonitor {
 
     private func reset() {
         draggedWindow = nil
+        dragStartFrame = .zero
         dragging = false
         overlayShown = false
         overlayScreen = nil

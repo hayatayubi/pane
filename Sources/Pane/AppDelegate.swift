@@ -86,6 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         addZoneItem(menu, "Left Half",     .leftHalf)
         addZoneItem(menu, "Right Half",    .rightHalf)
         addZoneItem(menu, "Maximize",      .maximize)
+        addZoneItem(menu, "Center",        .center)
         menu.addItem(.separator())
         addZoneItem(menu, "Top Half",      .topHalf)
         addZoneItem(menu, "Bottom Half",   .bottomHalf)

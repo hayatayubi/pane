@@ -5,6 +5,7 @@ enum SnapZone: String, CaseIterable, Sendable {
     case topLeft, topHalf, topRight
     case leftHalf, maximize, rightHalf
     case bottomLeft, bottomHalf, bottomRight
+    case center
 
     var symbolName: String {
         switch self {
@@ -17,6 +18,7 @@ enum SnapZone: String, CaseIterable, Sendable {
         case .bottomLeft:  return "rectangle.inset.bottomleading.filled"
         case .bottomHalf:  return "rectangle.bottomhalf.inset.filled"
         case .bottomRight: return "rectangle.inset.bottomtrailing.filled"
+        case .center:      return "dot.viewfinder"
         }
     }
 
@@ -45,6 +47,16 @@ enum SnapZone: String, CaseIterable, Sendable {
             return CGRect(x: visible.minX, y: topY + halfH, width: visible.width, height: visible.height - halfH)
         case .bottomRight:
             return CGRect(x: visible.minX + halfW, y: topY + halfH, width: visible.width - halfW, height: visible.height - halfH)
+        case .center:
+            // Used only as a fallback when we don't know the window's current
+            // size — apply(to:) overrides this with the actual window size.
+            let w = floor(visible.width * 0.6)
+            let h = floor(visible.height * 0.6)
+            return CGRect(
+                x: visible.minX + (visible.width - w) / 2,
+                y: topY + (visible.height - h) / 2,
+                width: w, height: h
+            )
         }
     }
 
@@ -52,6 +64,27 @@ enum SnapZone: String, CaseIterable, Sendable {
         guard let w = window ?? WindowManager.focusedWindow() else { return }
         let screen = screenForWindow(w) ?? NSScreen.main ?? NSScreen.screens.first
         guard let screen else { return }
+
+        // Stash the pre-snap frame so a quick re-drag within the next few
+        // seconds reverts the window to its previous size.
+        if let preSnap = WindowManager.frame(of: w) {
+            SnapHistory.record(window: w, preSnapFrame: preSnap)
+        }
+
+        // Center preserves the window's current size — just repositions it.
+        if self == .center, let current = WindowManager.frame(of: w) {
+            let visible = screen.visibleFrame
+            let topY = ScreenCoords.primaryHeight - visible.maxY
+            let frame = CGRect(
+                x: visible.minX + (visible.width - current.width) / 2,
+                y: topY + (visible.height - current.height) / 2,
+                width: current.width,
+                height: current.height
+            )
+            WindowManager.setFrame(frame, for: w)
+            return
+        }
+
         WindowManager.setFrame(axFrame(in: screen), for: w)
     }
 
@@ -72,14 +105,12 @@ enum SnapZone: String, CaseIterable, Sendable {
         let rightAX = leftAX + visible.width
         let bottomAX = topAX + visible.height
 
-        // How close to an edge the cursor must be for that edge's snap zone
-        // to activate. Very generous — the outline appears as soon as the
-        // user steers the cursor toward an edge, not only when they touch it.
-        let edge: CGFloat = 260
-        // Corner trigger reach along the perpendicular axis. A cursor that's
-        // within `edge` of one side AND within `corner` of an adjacent side
-        // activates that corner's quarter-screen zone instead of the half.
-        let corner: CGFloat = 380
+        // Trigger thresholds come from the user's chosen sensitivity. `edge`
+        // is the proximity at which a half-screen snap activates; `corner`
+        // is how far along the perpendicular axis still counts as a corner.
+        let sensitivity = SensitivityStore.shared.sensitivity
+        let edge = sensitivity.edgeProximity
+        let corner = sensitivity.cornerReach
 
         let nearTop    = axPoint.y <= topAX + edge
         let nearBottom = axPoint.y >= bottomAX - edge
@@ -117,6 +148,12 @@ enum SnapZone: String, CaseIterable, Sendable {
         case .bottomLeft:  return CGRect(x: 0,     y: halfH, width: halfW,             height: size.height - halfH)
         case .bottomHalf:  return CGRect(x: 0,     y: halfH, width: size.width,        height: size.height - halfH)
         case .bottomRight: return CGRect(x: halfW, y: halfH, width: size.width - halfW, height: size.height - halfH)
+        case .center:
+            // Not drag-triggered, but provide a representative centered rect
+            // so the switch is exhaustive and any caller has a sensible value.
+            let w = floor(size.width * 0.6)
+            let h = floor(size.height * 0.6)
+            return CGRect(x: (size.width - w) / 2, y: (size.height - h) / 2, width: w, height: h)
         }
     }
 }

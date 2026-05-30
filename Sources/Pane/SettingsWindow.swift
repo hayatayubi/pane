@@ -43,9 +43,11 @@ private struct SettingsView: View {
     @ObservedObject private var hotkeyStore = HotkeyStore.shared
     @ObservedObject private var appearance = AppearanceStore.shared
     @ObservedObject private var launchAtLogin = LaunchAtLoginStore.shared
+    @ObservedObject private var sensitivityStore = SensitivityStore.shared
 
     private let rows: [(SnapZone, String)] = [
         (.maximize,    "Maximize"),
+        (.center,      "Center"),
         (.leftHalf,    "Left Half"),
         (.rightHalf,   "Right Half"),
         (.topHalf,     "Top Half"),
@@ -79,7 +81,7 @@ private struct SettingsView: View {
         VStack(alignment: .leading, spacing: 0) {
             sectionHeader(
                 title: "General",
-                subtitle: "How Pane behaves at startup."
+                subtitle: "Startup behavior and how eager the drag-to-snap zones are."
             )
 
             HStack(spacing: 12) {
@@ -97,6 +99,31 @@ private struct SettingsView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
             .onAppear { launchAtLogin.refresh() }
+
+            HStack(spacing: 12) {
+                Image(systemName: "dial.medium")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Snap zone sensitivity")
+                        .font(.system(size: 13))
+                    Text("How close to an edge the cursor must be for the outline to appear.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Picker("", selection: $sensitivityStore.sensitivity) {
+                    ForEach(SnapSensitivity.allCases, id: \.self) { level in
+                        Text(level.displayName).tag(level)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 200)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
         }
     }
 
@@ -165,6 +192,7 @@ private struct SettingsView: View {
             Button("Reset All Settings") {
                 hotkeyStore.resetToDefaults()
                 appearance.resetToDefaults()
+                sensitivityStore.resetToDefaults()
             }
             Spacer()
         }

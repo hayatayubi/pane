@@ -114,7 +114,19 @@ final class HotkeyStore: ObservableObject {
             for (k, v) in decoded {
                 if let zone = SnapZone(rawValue: k) { out[zone] = v }
             }
+            // One-time migration: existing users upgrading from a build
+            // without .center get the default ⌃⌥C binding. Guarded so
+            // users who explicitly clear the binding don't have it
+            // resurrected on every launch.
+            let centerMigrationKey = "Pane.bindings.centerMigration.v1"
+            if !defaults.bool(forKey: centerMigrationKey) {
+                if out[.center] == nil, let def = Self.factoryDefaults[.center] {
+                    out[.center] = def
+                }
+                defaults.set(true, forKey: centerMigrationKey)
+            }
             bindings = out
+            save()
         } else {
             bindings = Self.factoryDefaults
             save()
@@ -140,6 +152,7 @@ final class HotkeyStore: ObservableObject {
             .topRight:    .init(keyCode: UInt32(kVK_ANSI_I),     carbonMods: ctrlOpt, displayChar: "I"),
             .bottomLeft:  .init(keyCode: UInt32(kVK_ANSI_J),     carbonMods: ctrlOpt, displayChar: "J"),
             .bottomRight: .init(keyCode: UInt32(kVK_ANSI_K),     carbonMods: ctrlOpt, displayChar: "K"),
+            .center:      .init(keyCode: UInt32(kVK_ANSI_C),     carbonMods: ctrlOpt, displayChar: "C"),
         ]
     }()
 }
