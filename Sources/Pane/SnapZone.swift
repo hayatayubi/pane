@@ -72,8 +72,14 @@ enum SnapZone: String, CaseIterable, Sendable {
         let rightAX = leftAX + visible.width
         let bottomAX = topAX + visible.height
 
-        let edge: CGFloat = 6        // "touching the edge"
-        let corner: CGFloat = 80     // corner trigger reach along each axis
+        // How close to an edge the cursor must be for that edge's snap zone
+        // to activate. Generous enough that users don't have to hit the exact
+        // pixel boundary — the outline appears as soon as they're approaching.
+        let edge: CGFloat = 50
+        // Corner trigger reach along the perpendicular axis. A cursor that's
+        // within `edge` of one side AND within `corner` of an adjacent side
+        // activates that corner's quarter-screen zone instead of the half.
+        let corner: CGFloat = 180
 
         let nearTop    = axPoint.y <= topAX + edge
         let nearBottom = axPoint.y >= bottomAX - edge
