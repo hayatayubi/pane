@@ -5,7 +5,11 @@
 A minimal macOS window-snapping utility. Lives in the menu bar, no Dock icon.
 
 <p align="center">
-  <video src="https://github.com/hayatayubi/pane/raw/main/Resources/screenshots/demo.mp4" width="720" controls muted></video>
+  <a href="https://github.com/hayatayubi/pane/blob/main/Resources/screenshots/demo.mp4">
+    <img src="Resources/screenshots/demo-poster.png" width="720" alt="Pane demo (click to play)">
+  </a>
+  <br>
+  <em>↑ Click to watch the demo</em>
 </p>
 
 ## Two ways to snap
