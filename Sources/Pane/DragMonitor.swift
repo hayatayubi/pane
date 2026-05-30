@@ -59,7 +59,6 @@ final class DragMonitor {
         runLoopSource = source
         CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
-        NSLog("Pane: CGEventTap installed (mouseDown only)")
     }
 
     deinit {
@@ -71,34 +70,23 @@ final class DragMonitor {
     fileprivate func reenableTap() {
         if let tap = eventTap {
             CGEvent.tapEnable(tap: tap, enable: true)
-            NSLog("Pane: CGEventTap re-enabled")
         }
     }
 
     // MARK: - Mouse down → start polling
 
     private func handleMouseDown(at point: CGPoint) {
-        guard let window = WindowManager.windowUnder(point: point) else {
-            NSLog("Pane: mouseDown — no window at \(point)")
-            return
-        }
-        guard let frame = WindowManager.frame(of: window) else {
-            NSLog("Pane: mouseDown — couldn't read window frame")
-            return
-        }
-        // Use top 56pt of the window as the drag strip — covers thicker
-        // Electron / Chromium / custom title bars too.
+        guard let window = WindowManager.windowUnder(point: point),
+              let frame = WindowManager.frame(of: window) else { return }
+        // Top 56pt of the window is the drag strip — wide enough to cover
+        // thicker Electron / Chromium / custom title bars.
         let titleStrip = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: 56)
-        guard titleStrip.contains(point) else {
-            NSLog("Pane: mouseDown not in titleStrip point=\(point) strip=\(titleStrip)")
-            return
-        }
+        guard titleStrip.contains(point) else { return }
 
         draggedWindow = window
         dragStartAX = point
         dragging = false
         overlayShown = false
-        NSLog("Pane: title-bar press; starting poll (frame=\(frame))")
         startPolling()
     }
 
@@ -125,10 +113,8 @@ final class DragMonitor {
         if !dragging {
             let dx = point.x - dragStartAX.x
             let dy = point.y - dragStartAX.y
-            if dx*dx + dy*dy >= dragThreshold * dragThreshold {
-                dragging = true
-                NSLog("Pane: drag threshold passed")
-            } else { return }
+            guard dx*dx + dy*dy >= dragThreshold * dragThreshold else { return }
+            dragging = true
         }
 
         updateOverlay(at: point)
@@ -156,7 +142,6 @@ final class DragMonitor {
             return
         }
         if let zone = overlay.zoneAtAX(point: point) {
-            NSLog("Pane: applying \(zone.rawValue)")
             zone.apply(to: window)
         }
         overlay.hide()

@@ -18,41 +18,25 @@ enum WindowManager {
     }
 
     static func setFrame(_ frame: CGRect, for window: AXUIElement) {
-        var pid: pid_t = 0
-        AXUIElementGetPid(window, &pid)
-        let bundleID = NSRunningApplication(processIdentifier: pid)?.bundleIdentifier ?? "?"
-        let before = self.frame(of: window) ?? .zero
-        NSLog("Pane: setFrame pid=%d bundle=%@ before=%@ requested=%@",
-              pid, bundleID, NSStringFromRect(before), NSStringFromRect(frame))
-
+        // Electron and similar wrapper-app windows ignore AX position/size
+        // writes while their parent application has `AXEnhancedUserInterface`
+        // turned on. Flipping it off for the duration of the write makes the
+        // change stick; we restore the original value afterward.
         let app = parentApplication(of: window)
         let enhancedWasOn = app.map(readEnhancedUI) ?? false
-        NSLog("Pane: AXEnhancedUserInterface was on=%d", enhancedWasOn ? 1 : 0)
-
         if let app, enhancedWasOn {
             AXUIElementSetAttributeValue(app, kAXEnhancedUIAttr, kCFBooleanFalse)
         }
 
-        // Check settability so we can report it
-        var posSettable: DarwinBoolean = false
-        var sizeSettable: DarwinBoolean = false
-        AXUIElementIsAttributeSettable(window, kAXPositionAttribute as CFString, &posSettable)
-        AXUIElementIsAttributeSettable(window, kAXSizeAttribute as CFString, &sizeSettable)
-        NSLog("Pane: settable position=%d size=%d",
-              posSettable.boolValue ? 1 : 0, sizeSettable.boolValue ? 1 : 0)
-
         var pos = frame.origin
         var size = frame.size
-        var rPos: AXError = .success
-        var rSize: AXError = .success
         if let posValue = AXValueCreate(.cgPoint, &pos) {
-            rPos = AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, posValue)
+            AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, posValue)
         }
         if let sizeValue = AXValueCreate(.cgSize, &size) {
-            rSize = AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeValue)
+            AXUIElementSetAttributeValue(window, kAXSizeAttribute as CFString, sizeValue)
         }
-        NSLog("Pane: pass1 setPos=%d setSize=%d", rPos.rawValue, rSize.rawValue)
-
+        // Second pass — some apps clamp size on the first apply.
         if let posValue = AXValueCreate(.cgPoint, &pos) {
             AXUIElementSetAttributeValue(window, kAXPositionAttribute as CFString, posValue)
         }
@@ -63,9 +47,6 @@ enum WindowManager {
         if let app, enhancedWasOn {
             AXUIElementSetAttributeValue(app, kAXEnhancedUIAttr, kCFBooleanTrue)
         }
-
-        let after = self.frame(of: window) ?? .zero
-        NSLog("Pane: setFrame after=%@", NSStringFromRect(after))
     }
 
     private static let kAXEnhancedUIAttr = "AXEnhancedUserInterface" as CFString
@@ -127,7 +108,6 @@ enum WindowManager {
             let app = appRef as! AXUIElement
             if let w = findWindow(in: app, containing: point) { return w }
         }
-        // Then every visible regular app.
         for running in NSWorkspace.shared.runningApplications {
             guard running.activationPolicy == .regular,
                   !running.isTerminated,

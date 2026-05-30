@@ -1,9 +1,6 @@
 import AppKit
 import ApplicationServices
 import Combine
-import os
-
-private let log = Logger(subsystem: "com.local.pane", category: "app")
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
@@ -14,18 +11,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hasPermission = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        log.info("applicationDidFinishLaunching")
-        NSLog("Pane: applicationDidFinishLaunching")
-
-        // Status item FIRST — the user always needs a way to see and quit the app,
+        // Status item first so the user can always see and quit the app,
         // regardless of permission state.
         setupStatusItem()
 
-        // System-level prompt; non-blocking. macOS shows its own dialog if needed.
+        // Non-blocking system prompt. macOS shows its own dialog if needed.
         hasPermission = AXIsProcessTrustedWithOptions(
             [kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true] as CFDictionary
         )
-        NSLog("Pane: initial accessibility trusted = %d", hasPermission ? 1 : 0)
         updateStatusItemAppearance()
 
         startMonitorsIfPossible()
@@ -41,13 +34,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        guard let button = statusItem.button else {
-            NSLog("Pane: ERROR — status item has no button")
-            return
-        }
+        guard let button = statusItem.button else { return }
         applyButtonAppearance(button)
-        NSLog("Pane: status item installed (image=%@, title=%@)",
-              button.image == nil ? "nil" : "set", button.title)
         rebuildMenu()
     }
 
@@ -161,8 +149,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.informativeText = """
         A minimal window-snapping utility for macOS.
 
-        • Drag a window to the top of the screen to reveal the snap layout picker.
-        • Use ⌃⌥ + arrow / U I J K / O L for direct snapping.
+        • Drag a window's title bar toward an edge or corner — the target zone outlines, release to snap.
+        • Or use keyboard shortcuts (customize them in Settings).
         """
         alert.runModal()
     }
@@ -173,7 +161,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let trusted = AXIsProcessTrusted()
         if trusted != hasPermission {
             hasPermission = trusted
-            NSLog("Pane: accessibility permission changed → %d", trusted ? 1 : 0)
             updateStatusItemAppearance()
             startMonitorsIfPossible()
         }
@@ -185,13 +172,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let m = DragMonitor()
             m.start()
             dragMonitor = m
-            NSLog("Pane: drag monitor started")
         }
         if hotkeyManager == nil {
             let h = HotkeyManager()
             h.register()
             hotkeyManager = h
-            NSLog("Pane: hotkeys registered")
         }
     }
 }

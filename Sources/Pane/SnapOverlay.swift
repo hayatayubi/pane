@@ -90,13 +90,16 @@ private struct SnapOutlineView: View {
 }
 
 private struct ZoneOutline: View {
+    @ObservedObject private var appearance = AppearanceStore.shared
+
     var body: some View {
+        let color = appearance.outlineColor
         RoundedRectangle(cornerRadius: 18, style: .continuous)
-            .fill(Color.accentColor.opacity(0.18))
+            .fill(color.opacity(0.18))
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .strokeBorder(Color.accentColor.opacity(0.95), lineWidth: 2.5)
+                    .strokeBorder(color.opacity(0.95), lineWidth: 2.5)
             )
-            .shadow(color: Color.accentColor.opacity(0.35), radius: 14)
+            .shadow(color: color.opacity(0.35), radius: 14)
     }
 }
