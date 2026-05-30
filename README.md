@@ -4,6 +4,10 @@
 
 A minimal macOS window-snapping utility. Lives in the menu bar, no Dock icon.
 
+<p align="center">
+  <video src="https://github.com/hayatayubi/pane/raw/main/Resources/screenshots/demo.mp4" width="720" controls muted></video>
+</p>
+
 ## Two ways to snap
 
 1. **Drag-to-edge** — grab any window's title bar and drag toward a screen edge or corner. The target zone outlines on-screen; release to snap.
@@ -25,6 +29,10 @@ A minimal macOS window-snapping utility. Lives in the menu bar, no Dock icon.
    | `⌃⌥K`  | Bottom-right  |
 
 Open **Settings…** from the menu bar icon (or `⌘,`) to rebind any shortcut. Click a shortcut chip, press your new combo (must include at least one modifier). `Esc` cancels, `⌫` clears.
+
+<p align="center">
+  <img src="Resources/screenshots/settings.png" width="540" alt="Pane settings window">
+</p>
 
 ## Download
 

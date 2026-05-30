@@ -40,10 +40,20 @@ fi
 
 cd "$(dirname "$0")"
 
-echo "→ Building $APP_NAME ($CONFIG)…"
-swift build -c "$CONFIG"
+# Release builds produce a universal binary (arm64 + x86_64) so the same
+# downloaded zip runs on both Apple Silicon and Intel Macs. Local dev builds
+# stay single-arch for faster iteration.
+if [ "$RELEASE_MODE" = "1" ]; then
+    ARCH_FLAGS=(--arch arm64 --arch x86_64)
+    echo "→ Building $APP_NAME ($CONFIG, universal arm64 + x86_64)…"
+else
+    ARCH_FLAGS=()
+    echo "→ Building $APP_NAME ($CONFIG)…"
+fi
 
-BIN_PATH=$(swift build -c "$CONFIG" --show-bin-path)
+swift build -c "$CONFIG" "${ARCH_FLAGS[@]}"
+
+BIN_PATH=$(swift build -c "$CONFIG" "${ARCH_FLAGS[@]}" --show-bin-path)
 APP_DIR="$BIN_PATH/$APP_NAME.app"
 CONTENTS="$APP_DIR/Contents"
 MACOS="$CONTENTS/MacOS"
