@@ -44,6 +44,7 @@ private struct SettingsView: View {
     @ObservedObject private var appearance = AppearanceStore.shared
     @ObservedObject private var launchAtLogin = LaunchAtLoginStore.shared
     @ObservedObject private var sensitivityStore = SensitivityStore.shared
+    @ObservedObject private var exclusions = ExclusionStore.shared
 
     private let rows: [(SnapZone, String)] = [
         (.maximize,    "Maximize"),
@@ -65,6 +66,8 @@ private struct SettingsView: View {
                     generalSection
                     Divider().padding(.vertical, 8)
                     appearanceSection
+                    Divider().padding(.vertical, 8)
+                    exclusionsSection
                     Divider().padding(.vertical, 8)
                     hotkeysSection
                 }
@@ -152,6 +155,72 @@ private struct SettingsView: View {
         }
     }
 
+    // MARK: - Excluded apps section
+
+    private var exclusionsSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader(
+                title: "Excluded Apps",
+                subtitle: "Turn off drag-to-snap or keyboard shortcuts for specific apps (e.g. FaceTime)."
+            )
+
+            VStack(spacing: 0) {
+                if exclusions.apps.isEmpty {
+                    HStack {
+                        Text("No apps excluded.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                } else {
+                    ForEach(Array(exclusions.apps.enumerated()), id: \.element.id) { i, app in
+                        ExcludedAppRow(app: app)
+                        if i < exclusions.apps.count - 1 {
+                            Divider().padding(.leading, 20)
+                        }
+                    }
+                }
+
+                HStack(spacing: 8) {
+                    Button {
+                        addAppViaOpenPanel()
+                    } label: {
+                        Label("Add App…", systemImage: "plus")
+                            .font(.system(size: 12))
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+            }
+        }
+    }
+
+    private func addAppViaOpenPanel() {
+        let panel = NSOpenPanel()
+        panel.title = "Choose an app to exclude"
+        panel.prompt = "Exclude"
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.allowedContentTypes = [.application]
+        panel.directoryURL = URL(fileURLWithPath: "/Applications")
+        if panel.runModal() == .OK, let url = panel.url {
+            guard let bundle = Bundle(url: url), let bundleID = bundle.bundleIdentifier else {
+                let alert = NSAlert()
+                alert.messageText = "Couldn't read that app"
+                alert.informativeText = "The selected item doesn't have a readable bundle identifier."
+                alert.runModal()
+                return
+            }
+            let name = FileManager.default.displayName(atPath: url.path)
+                .replacingOccurrences(of: ".app", with: "")
+            exclusions.add(bundleID: bundleID, name: name)
+        }
+    }
+
     // MARK: - Hotkeys section
 
     private var hotkeysSection: some View {
@@ -213,6 +282,58 @@ private struct ColorSwatch: View {
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .strokeBorder(Color.primary.opacity(0.15), lineWidth: 1)
             )
+    }
+}
+
+private struct ExcludedAppRow: View {
+    let app: ExcludedApp
+    @ObservedObject private var store = ExclusionStore.shared
+
+    private var icon: NSImage {
+        if let path = NSWorkspace.shared.urlForApplication(withBundleIdentifier: app.bundleID)?.path {
+            return NSWorkspace.shared.icon(forFile: path)
+        }
+        return NSWorkspace.shared.icon(for: .application)
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(nsImage: icon)
+                .resizable()
+                .frame(width: 22, height: 22)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(app.name)
+                    .font(.system(size: 13))
+                Text(app.bundleID)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            Spacer()
+            Toggle("Block drag", isOn: Binding(
+                get: { app.blockDrag },
+                set: { store.setBlockDrag($0, for: app.bundleID) }
+            ))
+            .toggleStyle(.checkbox)
+            .font(.system(size: 12))
+            Toggle("Block shortcuts", isOn: Binding(
+                get: { app.blockShortcuts },
+                set: { store.setBlockShortcuts($0, for: app.bundleID) }
+            ))
+            .toggleStyle(.checkbox)
+            .font(.system(size: 12))
+            Button {
+                store.remove(bundleID: app.bundleID)
+            } label: {
+                Image(systemName: "minus.circle.fill")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help("Remove")
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
     }
 }
 

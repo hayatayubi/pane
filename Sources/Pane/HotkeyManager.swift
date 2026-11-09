@@ -21,7 +21,10 @@ private let hotkeyCallback: EventHandlerUPP = { _, eventRef, _ in
     guard status == noErr, let zone = hotkeyMap[hkID.id] else {
         return OSStatus(eventNotHandledErr)
     }
-    DispatchQueue.main.async { zone.apply() }
+    DispatchQueue.main.async {
+        if ExclusionStore.shared.isShortcutBlocked(bundleID: AXApp.focusedBundleID()) { return }
+        zone.apply()
+    }
     return noErr
 }
 

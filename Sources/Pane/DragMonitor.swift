@@ -83,6 +83,7 @@ final class DragMonitor {
         // thicker Electron / Chromium / custom title bars.
         let titleStrip = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: 56)
         guard titleStrip.contains(point) else { return }
+        if ExclusionStore.shared.isDragBlocked(bundleID: AXApp.bundleID(of: window)) { return }
 
         draggedWindow = window
         dragStartAX = point
