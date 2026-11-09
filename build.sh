@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_NAME="Pane"
-BUNDLE_ID="com.local.pane"
+BUNDLE_ID="com.hayat.pane"
 CONFIG="release"
 
 # Parse flags. `--release` switches to ad-hoc signing and produces a
