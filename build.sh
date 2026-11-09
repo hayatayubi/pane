@@ -27,7 +27,8 @@ done
 # signing gives them the normal "unidentified developer" prompt that they
 # can bypass once with a right-click → Open or `xattr -dr com.apple.quarantine`.
 if [ "$RELEASE_MODE" = "1" ]; then
-    SIGN_IDENTITY="-"
+    # Set DEVELOPER_ID_APPLICATION to produce a Developer ID signed (notarisable) build.
+    SIGN_IDENTITY="${DEVELOPER_ID_APPLICATION:--}"
 else
     if [ -z "${SIGN_IDENTITY:-}" ]; then
         # Match by SHA-1 hash, not display name — Apple Development certs from
@@ -93,7 +94,11 @@ cat > "$CONTENTS/Info.plist" <<EOF
 </plist>
 EOF
 
-codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_DIR" >/dev/null
+if [ "$RELEASE_MODE" = "1" ] && [ "$SIGN_IDENTITY" != "-" ]; then
+    codesign --force --deep --options runtime --timestamp --sign "$SIGN_IDENTITY" "$APP_DIR" >/dev/null
+else
+    codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_DIR" >/dev/null
+fi
 echo "✓ Built $APP_DIR  (signed: $SIGN_IDENTITY)"
 
 if [ "$RELEASE_MODE" = "1" ]; then
